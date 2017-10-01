@@ -19,4 +19,4 @@ The file `notebook.Rmd` is the R code (as a notebook), and `data_visualization.i
 All the data needed (and generated) for the project is also available. The file `audiofeatures.csv` contain the feature vectors used for the clustering, `tracksinfo.csv` has some information regarding the music such as album, artists, and Spotify's uri (so you can judge my music). The files `main_cluster.csv` and `cluster_3.csv` are the clustering results.
 
 ## The report
-A complete report of this project is available at: ...
+A complete report of this project is available at: https://medium.com/@jdiossantos/discovering-similarities-across-my-spotify-music-using-data-clustering-and-visualization-52b58e6f547b
