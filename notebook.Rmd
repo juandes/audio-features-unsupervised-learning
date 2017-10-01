@@ -1,0 +1,154 @@
+---
+title: "Spotify Audio Features Clustering and Visualization"
+output:
+  html_document: default
+  html_notebook: default
+  pdf_document: default
+---
+
+```{r, include=FALSE}
+setwd("~/Development/Python/SpotifyUnsupervised")
+require(cluster)
+##require(fpc)
+require(caret)
+require(ggplot2)
+require(jsonlite)
+
+# Set seed for reproducibility
+set.seed(7)
+
+# Load data
+features <- read.csv("audiofeatures.csv")
+df_features <- features
+info <- read_json('tracksinfo.json', simplifyVector = TRUE)
+
+info <- info$track
+uri <- as.data.frame(features$uri)
+colnames(uri) <- c('uri')
+
+info <- as.data.frame(cbind(info$name, info$uri, info$album$name, info$artists))
+colnames(info) <- c('name', 'uri', 'album_name', 'artists')
+```
+
+## Summary of songs
+```{r, echo=FALSE}
+summary(features)
+```
+
+## Feature selection
+```{r}
+# Remove highly correlated features
+correlationMatrix <- cor(features[,1:7])
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.5, verbose=TRUE)
+print(highlyCorrelated)
+# Feature 1 and 6 are highly correlation, so I removed one of them (1)
+features[1] <- NULL
+# Remove feature valence because I'm not interested in it
+features[6] <- NULL
+
+# This dataframe will be needed later
+features_with_uri <- features
+features$uri <- NULL
+```
+
+## Determine best number of clusters
+```{r}
+# Calculate the avg silhouette for k = 2,... k = 10
+avg.sil <- sapply(2:10, function(x) pam(features, x)$silinfo$avg.width)
+avg.sil.df <- data.frame(k = 2:10, silhouette = avg.sil)
+
+ggplot(avg.sil.df, aes(x = k, y = silhouette)) +
+  geom_point() +
+  geom_line() +
+  ggtitle("Average Silhouette for k=2, ..., k=10")
+
+# Calculate the Gap Statistic
+c <- clusGap(features, pam, 10, B = 100, verbose = interactive())
+plot(c, main = "Gap statistic for k=2, ..., k=10")
+```
+
+
+
+While 3 clusters seem to be the best parameter, I went for 5 since one of my
+main interests is to see how the songs are split between the clusters, and 3 was not
+enough.
+
+## The clustering
+```{r}
+# Perform the cluster
+main_clustering <- pam(features, 5, trace.lev = 1)
+
+# Cluster information
+print(main_clustering$clusinfo)
+
+# Average silhouette per cluster
+print(main_clustering$silinfo$avg.width)
+```
+
+```{r}
+main_clustering_silhouette <- silhouette(main_clustering)
+clusplot(main_clustering, shade=TRUE, color=TRUE)
+plot(main_clustering_silhouette, col='black', border='gray',
+     main='Silhouette plot of the cluster')
+```
+
+The items with negative silhouette are songs that are most probably assigned to the wrong cluster.
+
+```{r}
+# Merge the clustering results with the track information
+clustering_with_uri <- data.frame(clustering = main_clustering$clustering, uri = uri$uri)
+clustering_with_track_info <- merge(clustering_with_uri, info)
+
+# Unlist some values so it is easy to read
+clustering_with_track_info$name <- unlist(clustering_with_track_info$name)
+clustering_with_track_info$album_name <- unlist(clustering_with_track_info$album_name)
+
+clustering_with_track_info$artists <- as.character(clustering_with_track_info$artists)
+```
+
+```{r}
+# CLUSTER 4
+# Show the top of the cluster 4
+head(clustering_with_track_info[clustering_with_track_info$clustering == 4,])
+clustering_with_track_info$album_name <- as.factor(clustering_with_track_info$album_name)
+```
+
+The content of this cluster is mostly made of songs from videogames (Child of Light, Limbo, and Transistor), songs from movie soundtracks (Interstellar, Lord of The Rings, Mad Max), and other highly instrumental songs; none of the first 40 songs have vocals.
+
+```{r}
+head(clustering_with_track_info[clustering_with_track_info$clustering == 3,])
+summary(clustering_with_track_info[clustering_with_track_info$clustering == 3,])
+```
+
+This cluster shows more diversity than the previous one. It is mostly made of songs
+from both Above & Beyond's Acoustic albums, Kanye West music, and songs from Darren Korb, composer of the soundtrack of the Transistor and Bastion videogames.
+
+What happen if we perform a new clustering with the content of this cluster?
+
+```{r}
+# Cluster the content of cluster 3
+c3_track_info <- clustering_with_track_info[clustering_with_track_info$clustering == 3,]
+c3 <- clustering_with_uri[clustering_with_uri$clustering == 3,]
+c3 <- merge(c3, features_with_uri, by = 'uri')
+
+c3_features <- c3[c('liveness', 'speechiness', 'acousticness', 'instrumentalness',
+                    'danceability')]
+c3$clustering <- NULL
+c3_clustering <- pam(c3_features, 4, trace.lev = 1)
+print(c3_clustering$clusinfo)
+
+c3_clustering_sil <- silhouette(c3_clustering)
+clusplot(c3_clustering, shade=TRUE, color=TRUE)
+plot(c3_clustering_sil, col='black', border='gray',
+     main='Silhouette plot of the cluster')
+```
+
+```{r}
+## These are the songs of the 2 cluster of the clustering done on cluster 3
+c3_results <- data.frame(cluster = c3_clustering$clustering, uri = c3_track_info$uri,
+                         album = c3_track_info$album_name, artist = c3_track_info$artists)
+
+
+cluster.3 <- data.frame(c3_features, clustering = c3_clustering$clustering)
+write.csv(x = cluster.3, file="cluster_3.csv", row.names = FALSE)
+```
