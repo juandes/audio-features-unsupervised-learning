@@ -10,10 +10,13 @@ This work is mostly divided into four parts, which also represents the main topi
 - How good is the clustering? How similar are the songs within each cluster? Does the clustering make any sense?
 - How does the clustered data look like?
 
-This work was done using both R, and Python. The clustering part was done using R and the packages caret, and cluster. Python was used to acquire the data using the library Spotipy, and to visualize the data using Hypertools. All the code used for the analysis is available in this repo. The file `notebook.Rmd` is the R code (as a notebook), and `data_visualization.ipynb` is the code used for the visualizations.
+This work was done using both R, and Python. The clustering part was done using R and the packages caret, and cluster. Python was used to acquire the data using the library Spotipy, and to visualize the data using Hypertools.
+
+## The files
+The file `notebook.Rmd` is the R code (as a notebook), and `data_visualization.ipynb` is the Python code (as a Jupyter notebook) used for the visualizations.
 
 ## The data
-All the data needed (and generated) for the project is also available. The file `audiofeatures.csv` contain the feature vectors used for the clustering, `tracksinfo.csv` has some information regarding the music such as album, artists, and Spotify's uri. The files `main_cluster.csv` and `cluster_3.csv` are the clustering results.
+All the data needed (and generated) for the project is also available. The file `audiofeatures.csv` contain the feature vectors used for the clustering, `tracksinfo.csv` has some information regarding the music such as album, artists, and Spotify's uri (so you can judge my music). The files `main_cluster.csv` and `cluster_3.csv` are the clustering results.
 
 ## The report
 A complete report of this project is available at: ...
