@@ -84,11 +84,11 @@ def get_user_playlist(username, sp):
 def main(username, playlist):
     sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
     print "Getting user playlist"
-    #get_user_playlist(username, sp)
+    get_user_playlist(username, sp)
     print "Getting playlist content"
     get_playlist_content(username, playlist, sp)
     print "Getting playlist audio features"
-    #get_playlist_audio_features(username, playlist, sp)
+    get_playlist_audio_features(username, playlist, sp)
 
 
 if __name__ == '__main__':
